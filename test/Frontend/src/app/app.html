@@ -1,0 +1,69 @@
+<main class="contenedor">
+  <h1>Angular + .NET</h1>
+
+  <section class="tarjeta">
+    <h2>Respuesta del backend</h2>
+
+    <p>
+      {{ mensaje() }}
+    </p>
+
+    <small>
+      Fecha desde .NET: {{ fecha() }}
+    </small>
+  </section>
+
+<section class="tarjeta"> 
+  <h2>Buscar producto</h2>
+
+  <input
+    type="text"
+    placeholder="Ejemplo: bike"
+    [value]="busqueda()"
+    (input)="busqueda.set($any($event.target).value)"
+  />
+
+  <button type="button" (click)="buscarProductos()">Buscar</button>
+  <button type="button" (click)="limpiarBusqueda()">Limpiar</button>
+</section>
+
+  <section class="tarjeta">
+  <h2>Productos</h2>
+
+  <ul>
+    @for (producto of productos(); track producto.productId) {
+      <li>
+        {{ producto.name }} - {{ producto.productNumber }} - ${{ producto.listPrice }}
+        <button type="button" (click)="verDetalle(producto.productId)">Ver detalle</button>
+      </li>
+    }
+  </ul>
+</section>
+
+<section class="tarjeta">
+  <h2>Detalle del producto</h2>
+
+  @if (productoSeleccionado()) {
+    <p>ID: {{ productoSeleccionado().productId }}</p>
+    <p>Nombre: {{ productoSeleccionado().name }}</p>
+    <p>Numero: {{ productoSeleccionado().productNumber }}</p>
+    <p>Color: {{ productoSeleccionado().color || 'Sin color' }}</p>
+    <p>Precio: ${{ productoSeleccionado().listPrice }}</p>
+
+    <button type="button" (click)="cerrarDetalle()">Cerrar</button>
+  } @else {
+    <p>Selecciona un producto para ver su detalle.</p>
+  }
+</section>
+
+<section class="tarjeta">
+  <h2>Perfil</h2>
+
+  @if (perfil()) {
+    <p>{{ perfil().nombre }}</p>
+    <p>{{ perfil().nivel }}</p>
+    <p>{{ perfil().tecnologiaFavorita }}</p>
+  }
+</section>
+
+</main>

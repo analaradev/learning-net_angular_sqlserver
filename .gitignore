@@ -1,1 +1,38 @@
-AdventureWorks2022.bak
+# macOS
+.DS_Store
+
+# Backups de bases de datos
+*.bak
+*.bacpac
+*.mdf
+*.ldf
+
+# .NET
+**/bin/
+**/obj/
+*.user
+*.suo
+*.rsuser
+
+# Configuracion local con credenciales
+**/appsettings.Development.json
+**/appsettings.Local.json
+
+# Angular / Node
+**/node_modules/
+**/.angular/cache/
+**/dist/
+**/tmp/
+**/out-tsc/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDEs
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/mcp.json
