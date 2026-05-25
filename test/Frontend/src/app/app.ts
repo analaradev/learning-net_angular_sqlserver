@@ -1,5 +1,8 @@
 import { Component, signal } from '@angular/core';
 
+import { API_ROUTES } from './api-routes';
+import { Product } from './product';
+
 @Component({
   selector: 'app-root',
   imports: [],
@@ -7,108 +10,68 @@ import { Component, signal } from '@angular/core';
   styleUrl: './app.scss'
 })
 export class App {
-  protected readonly title = signal('Frontend');
-
-  mensaje = signal('Cargando respuesta...');
-  fecha = signal('');
-
-  productos = signal<any[]>([]);
-
-  perfil = signal<any>(null);
-
-  busqueda = signal('');
-
-  productoSeleccionado = signal<any>(null);
+  products = signal<Product[]>([]);
+  selectedProduct = signal<Product | null>(null);
+  searchText = signal('');
+  error = signal('');
 
   async ngOnInit() {
-    try {
-      const respuesta = await fetch('/api/hello');
+    await this.loadProducts();
+  }
 
-      if (!respuesta.ok) {
-        throw new Error(`La API respondió con estado ${respuesta.status}`);
+  async loadProducts() {
+    try {
+      const response = await fetch(API_ROUTES.products);
+
+      if (!response.ok) {
+        throw new Error('No se pudo cargar la lista de productos.');
       }
 
-      const datos = await respuesta.json();
-
-      this.mensaje.set(datos.message);
-      this.fecha.set(datos.date);
-
-      await this.obtenerProductos();
-
-      //perfil
-      const respuestaPerfil = await fetch('/api/perfil');
-      const perfil = await respuestaPerfil.json();
-      this.perfil.set(perfil);
-
-    } catch (error) {
-      console.error(error);
-      this.mensaje.set('No se pudo conectar con la API.');
-      this.fecha.set('');
+      const products = await response.json();
+      this.products.set(products);
+      this.error.set('');
+    } catch {
+      this.error.set('No se pudieron cargar los productos.');
     }
   }
 
-  async obtenerProductos() {
-    try {
-      const respuesta = await fetch('/api/productos');
+  async searchProducts() {
+    const name = this.searchText().trim();
 
-      if (!respuesta.ok) {
-        throw new Error(`La API respondió con estado ${respuesta.status}`);
-      }
-
-      const productos = await respuesta.json();
-      this.productos.set(productos);
-    } catch (error) {
-      console.error(error);
-      this.mensaje.set('Error al cargar productos.');
-    }
-  }
-
-  async buscarProductos() {
-    const nombre = this.busqueda().trim();
-
-    if (!nombre) {
-      await this.obtenerProductos();
+    if (!name) {
+      await this.loadProducts();
       return;
     }
 
     try {
-      const respuesta = await fetch(`/api/productos/buscar?nombre=${encodeURIComponent(nombre)}`);
+      const response = await fetch(API_ROUTES.searchProducts(name));
 
-      if (!respuesta.ok) {
-        throw new Error(`La API respondió con estado ${respuesta.status}`);
+      if (!response.ok) {
+        throw new Error('No se pudo buscar productos.');
       }
 
-      const productos = await respuesta.json();
-      this.productos.set(productos);
-    } catch (error) {
-      console.error(error);
-      this.mensaje.set('Error al buscar productos.');
+      const products = await response.json();
+      this.products.set(products);
+      this.selectedProduct.set(null);
+      this.error.set('');
+    } catch {
+      this.error.set('No se pudo buscar productos.');
     }
   }
 
-  async limpiarBusqueda() {
-    this.busqueda.set('');
-    await this.obtenerProductos();
-  }
-
-  async verDetalle(productId: number) {
+  async viewDetail(productId: number) {
     try {
-      const respuesta = await fetch(`/api/productos/${productId}`);
+      const response = await fetch(API_ROUTES.productDetail(productId));
 
-      if (!respuesta.ok) {
-        throw new Error(`La API respondió con estado ${respuesta.status}`);
+      if (!response.ok) {
+        throw new Error('No se pudo cargar el detalle del producto.');
       }
 
-      const producto = await respuesta.json();
-      this.productoSeleccionado.set(producto);
-    } catch (error) {
-      console.error(error);
-      this.mensaje.set('Error al cargar el detalle del producto.');
+      const product = await response.json();
+      this.selectedProduct.set(product);
+      this.error.set('');
+    } catch {
+      this.error.set('No se pudo cargar el detalle del producto.');
     }
   }
-
-  cerrarDetalle() {
-    this.productoSeleccionado.set(null);
-  }
-    
-} 
+}

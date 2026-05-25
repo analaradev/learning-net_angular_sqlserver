@@ -1,6 +1,6 @@
-namespace Backend.Models;
+namespace Backend.Dtos;
 
-public class ProductoDetalleDto
+public class ProductDetailDto
 {
     public int ProductId { get; set; }
     public string Name { get; set; } = "";
