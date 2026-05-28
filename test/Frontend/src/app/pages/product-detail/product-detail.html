@@ -1,0 +1,18 @@
+<h1>Detalle</h1>
+
+<section class="tarjeta">
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (product()) {
+    <p>ID: {{ product()!.productId }}</p>
+    <p>Nombre: {{ product()!.name }}</p>
+    <p>Numero: {{ product()!.productNumber }}</p>
+    <p>Color: {{ product()!.color || 'Sin color' }}</p>
+    <p>Precio: {{ product()!.listPrice }}</p>
+    <p>Peso: {{ product()!.weight || 'Sin peso' }}</p>
+  } @else {
+    <p>Cargando producto...</p>
+  }
+</section>
+
+<a routerLink="/productos">Volver a productos</a>
