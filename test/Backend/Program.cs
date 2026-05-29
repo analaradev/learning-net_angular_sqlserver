@@ -1,4 +1,5 @@
 using Backend.Data;
+using Backend.Repositories;
 using Backend.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,6 +16,7 @@ builder.Services.AddDbContext<AdventureWorksContext>(options =>
 //     config.AddProfile<ProductProfile>();
 // });
 
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddControllers();
 
