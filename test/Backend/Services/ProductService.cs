@@ -52,14 +52,11 @@ public class ProductService
         return products.Adapt<List<ProductDto>>();
     }
 
-    public async Task<ProductDetailDto> CreateAsync(Product product)
+    public async Task<ProductDetailDto> CreateAsync(CreateProductDto productDto)
     {
+        var product = productDto.Adapt<Product>();
+        product.SellStartDate = DateTime.UtcNow;
         product.ModifiedDate = DateTime.UtcNow;
-
-        if (product.SellStartDate == default)
-        {
-            product.SellStartDate = DateTime.UtcNow;
-        }
 
         _context.Products.Add(product);
         await _context.SaveChangesAsync();
@@ -67,7 +64,7 @@ public class ProductService
         return product.Adapt<ProductDetailDto>();
     }
 
-    public async Task<bool> UpdateAsync(int id, Product product)
+    public async Task<bool> UpdateAsync(int id, UpdateProductDto productDto)
     {
         var productFromDb = await _context.Products
             .FirstOrDefaultAsync(existingProduct => existingProduct.ProductId == id);
@@ -77,16 +74,13 @@ public class ProductService
             return false;
         }
 
-        productFromDb.Name = product.Name;
-        productFromDb.ProductNumber = product.ProductNumber;
-        productFromDb.Color = product.Color;
-        productFromDb.StandardCost = product.StandardCost;
-        productFromDb.ListPrice = product.ListPrice;
-        productFromDb.Size = product.Size;
-        productFromDb.Weight = product.Weight;
-        productFromDb.SellStartDate = product.SellStartDate;
-        productFromDb.SellEndDate = product.SellEndDate;
-        productFromDb.DiscontinuedDate = product.DiscontinuedDate;
+        productFromDb.Name = productDto.Name;
+        productFromDb.ProductNumber = productDto.ProductNumber;
+        productFromDb.Color = productDto.Color;
+        productFromDb.StandardCost = productDto.StandardCost;
+        productFromDb.ListPrice = productDto.ListPrice;
+        productFromDb.Size = productDto.Size;
+        productFromDb.Weight = productDto.Weight;
         productFromDb.ModifiedDate = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
@@ -96,7 +90,7 @@ public class ProductService
 
     public async Task<ProductDetailDto?> PatchAsync(
         int id,
-        ProductPatchRequest request)
+        PatchProductDto productDto)
     {
         var productFromDb = await _context.Products
             .FirstOrDefaultAsync(existingProduct => existingProduct.ProductId == id);
@@ -106,39 +100,39 @@ public class ProductService
             return null;
         }
 
-        if (!string.IsNullOrWhiteSpace(request.Name))
+        if (!string.IsNullOrWhiteSpace(productDto.Name))
         {
-            productFromDb.Name = request.Name;
+            productFromDb.Name = productDto.Name;
         }
 
-        if (!string.IsNullOrWhiteSpace(request.ProductNumber))
+        if (!string.IsNullOrWhiteSpace(productDto.ProductNumber))
         {
-            productFromDb.ProductNumber = request.ProductNumber;
+            productFromDb.ProductNumber = productDto.ProductNumber;
         }
 
-        if (request.Color is not null)
+        if (productDto.Color is not null)
         {
-            productFromDb.Color = request.Color;
+            productFromDb.Color = productDto.Color;
         }
 
-        if (request.StandardCost.HasValue)
+        if (productDto.StandardCost.HasValue)
         {
-            productFromDb.StandardCost = request.StandardCost.Value;
+            productFromDb.StandardCost = productDto.StandardCost.Value;
         }
 
-        if (request.ListPrice.HasValue)
+        if (productDto.ListPrice.HasValue)
         {
-            productFromDb.ListPrice = request.ListPrice.Value;
+            productFromDb.ListPrice = productDto.ListPrice.Value;
         }
 
-        if (request.Size is not null)
+        if (productDto.Size is not null)
         {
-            productFromDb.Size = request.Size;
+            productFromDb.Size = productDto.Size;
         }
 
-        if (request.Weight.HasValue)
+        if (productDto.Weight.HasValue)
         {
-            productFromDb.Weight = request.Weight.Value;
+            productFromDb.Weight = productDto.Weight.Value;
         }
 
         productFromDb.ModifiedDate = DateTime.UtcNow;

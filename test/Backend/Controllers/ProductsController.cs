@@ -1,5 +1,4 @@
 using Backend.Dtos;
-using Backend.Models;
 using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -47,16 +46,16 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Product product)
+    public async Task<IActionResult> Create([FromBody] CreateProductDto productDto)
     {
-        var createdProduct = await _productService.CreateAsync(product);
+        var createdProduct = await _productService.CreateAsync(productDto);
         return Ok(createdProduct);
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] Product product)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateProductDto productDto)
     {
-        var updated = await _productService.UpdateAsync(id, product);
+        var updated = await _productService.UpdateAsync(id, productDto);
 
         if (!updated)
         {
@@ -67,9 +66,9 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPatch("{id:int}")]
-    public async Task<IActionResult> Patch(int id, [FromBody] ProductPatchRequest request)
+    public async Task<IActionResult> Patch(int id, [FromBody] PatchProductDto productDto)
     {
-        var updatedProduct = await _productService.PatchAsync(id, request);
+        var updatedProduct = await _productService.PatchAsync(id, productDto);
 
         if (updatedProduct is null)
         {
