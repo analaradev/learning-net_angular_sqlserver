@@ -1,3 +1,5 @@
+using Backend.Dtos;
+using Backend.Models;
 using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -42,5 +44,51 @@ public class ProductsController : ControllerBase
     {
         var products = await _productService.SearchByNameAsync(nombre);
         return Ok(products);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] Product product)
+    {
+        var createdProduct = await _productService.CreateAsync(product);
+        return Ok(createdProduct);
+    }
+
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(int id, [FromBody] Product product)
+    {
+        var updated = await _productService.UpdateAsync(id, product);
+
+        if (!updated)
+        {
+            return NotFound();
+        }
+
+        return Ok();
+    }
+
+    [HttpPatch("{id:int}")]
+    public async Task<IActionResult> Patch(int id, [FromBody] ProductPatchRequest request)
+    {
+        var updatedProduct = await _productService.PatchAsync(id, request);
+
+        if (updatedProduct is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(updatedProduct);
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var deleted = await _productService.DeleteAsync(id);
+
+        if (!deleted)
+        {
+            return NotFound();
+        }
+
+        return Ok();
     }
 }

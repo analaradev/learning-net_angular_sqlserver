@@ -1,5 +1,6 @@
 using Backend.Data;
 using Backend.Dtos;
+using Backend.Models;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,14 +9,10 @@ namespace Backend.Services;
 public class ProductService
 {
     private readonly AdventureWorksContext _context;
-    // AutoMapper:
-    // private readonly IMapper _mapper;
 
     public ProductService(AdventureWorksContext context)
     {
         _context = context;
-        // AutoMapper:
-        // _mapper = mapper;
     }
 
 //task es para  que sea asincrono el metodo 
@@ -27,23 +24,6 @@ public class ProductService
             .Take(10)
             .ToListAsync();
 
-     //lynq projection
-        // return await _context.Products
-        //     .AsNoTracking()
-        //     .OrderBy(product => product.Name)
-        //     .Take(10)
-        //     .Select(product => new ProductDto
-        //     {
-        //         ProductId = product.ProductId,
-        //         Name = product.Name,
-        //         ProductNumber = product.ProductNumber,
-        //         ListPrice = product.ListPrice
-        //     })
-        //     .ToListAsync();
-
-        // automaper
-
-        // return _mapper.Map<List<ProductDto>>(products);
 
         return products.Adapt<List<ProductDto>>();
     }
@@ -54,22 +34,6 @@ public class ProductService
             .AsNoTracking()
             .Where(product => product.ProductId == id)
             .FirstOrDefaultAsync();
-
-        // return await _context.Products
-        //     .AsNoTracking()
-        //     .Where(product => product.ProductId == id)
-        //     .Select(product => new ProductDetailDto
-        //     {
-        //         ProductId = product.ProductId,
-        //         Name = product.Name,
-        //         ProductNumber = product.ProductNumber,
-        //         Color = product.Color,
-        //         ListPrice = product.ListPrice,
-        //         Weight = product.Weight
-        //     })
-        //     .FirstOrDefaultAsync();
-        // AutoMapper:
-        // return _mapper.Map<ProductDetailDto?>(product);
 
         return product.Adapt<ProductDetailDto?>();
     }
@@ -84,9 +48,119 @@ public class ProductService
             .Take(20)
             .ToListAsync();
 
-        // AutoMapper:
-        // return _mapper.Map<List<ProductDto>>(products);
 
         return products.Adapt<List<ProductDto>>();
+    }
+
+    public async Task<ProductDetailDto> CreateAsync(Product product)
+    {
+        product.ModifiedDate = DateTime.UtcNow;
+
+        if (product.SellStartDate == default)
+        {
+            product.SellStartDate = DateTime.UtcNow;
+        }
+
+        _context.Products.Add(product);
+        await _context.SaveChangesAsync();
+
+        return product.Adapt<ProductDetailDto>();
+    }
+
+    public async Task<bool> UpdateAsync(int id, Product product)
+    {
+        var productFromDb = await _context.Products
+            .FirstOrDefaultAsync(existingProduct => existingProduct.ProductId == id);
+
+        if (productFromDb is null)
+        {
+            return false;
+        }
+
+        productFromDb.Name = product.Name;
+        productFromDb.ProductNumber = product.ProductNumber;
+        productFromDb.Color = product.Color;
+        productFromDb.StandardCost = product.StandardCost;
+        productFromDb.ListPrice = product.ListPrice;
+        productFromDb.Size = product.Size;
+        productFromDb.Weight = product.Weight;
+        productFromDb.SellStartDate = product.SellStartDate;
+        productFromDb.SellEndDate = product.SellEndDate;
+        productFromDb.DiscontinuedDate = product.DiscontinuedDate;
+        productFromDb.ModifiedDate = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<ProductDetailDto?> PatchAsync(
+        int id,
+        ProductPatchRequest request)
+    {
+        var productFromDb = await _context.Products
+            .FirstOrDefaultAsync(existingProduct => existingProduct.ProductId == id);
+
+        if (productFromDb is null)
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Name))
+        {
+            productFromDb.Name = request.Name;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ProductNumber))
+        {
+            productFromDb.ProductNumber = request.ProductNumber;
+        }
+
+        if (request.Color is not null)
+        {
+            productFromDb.Color = request.Color;
+        }
+
+        if (request.StandardCost.HasValue)
+        {
+            productFromDb.StandardCost = request.StandardCost.Value;
+        }
+
+        if (request.ListPrice.HasValue)
+        {
+            productFromDb.ListPrice = request.ListPrice.Value;
+        }
+
+        if (request.Size is not null)
+        {
+            productFromDb.Size = request.Size;
+        }
+
+        if (request.Weight.HasValue)
+        {
+            productFromDb.Weight = request.Weight.Value;
+        }
+
+        productFromDb.ModifiedDate = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return productFromDb.Adapt<ProductDetailDto>();
+    }
+
+    public async Task<bool> DeleteAsync(int id)
+    {
+        var productFromDb = await _context.Products
+            .FirstOrDefaultAsync(existingProduct => existingProduct.ProductId == id);
+
+        if (productFromDb is null)
+        {
+            return false;
+        }
+
+        _context.Products.Remove(productFromDb);
+        await _context.SaveChangesAsync();
+
+        return true;
     }
 }
