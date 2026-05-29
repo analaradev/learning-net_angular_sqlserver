@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Services;
 
-public class ProductService
+public class ProductService : IProductService
 {
     private readonly AdventureWorksContext _context;
 
@@ -52,26 +52,43 @@ public class ProductService
         return products.Adapt<List<ProductDto>>();
     }
 
-    public async Task<ProductDetailDto> CreateAsync(CreateProductDto productDto)
+    public async Task<(ProductWriteResult Result, ProductDetailDto? Product)> CreateAsync(CreateProductDto productDto)
     {
+        var productNumberExists = await _context.Products
+            .AnyAsync(product => product.ProductNumber == productDto.ProductNumber);
+
+        if (productNumberExists)
+        {
+            return (ProductWriteResult.Conflict, null);
+        }
+
         var product = productDto.Adapt<Product>();
         product.SellStartDate = DateTime.UtcNow;
         product.ModifiedDate = DateTime.UtcNow;
-
         _context.Products.Add(product);
         await _context.SaveChangesAsync();
 
-        return product.Adapt<ProductDetailDto>();
+        return (ProductWriteResult.Success, product.Adapt<ProductDetailDto>());
     }
 
-    public async Task<bool> UpdateAsync(int id, UpdateProductDto productDto)
+    public async Task<ProductWriteResult> UpdateAsync(int id, UpdateProductDto productDto)
     {
         var productFromDb = await _context.Products
             .FirstOrDefaultAsync(existingProduct => existingProduct.ProductId == id);
 
         if (productFromDb is null)
         {
-            return false;
+            return ProductWriteResult.NotFound;
+        }
+
+        var productNumberExists = await _context.Products
+            .AnyAsync(product =>
+                product.ProductId != id &&
+                product.ProductNumber == productDto.ProductNumber);
+
+        if (productNumberExists)
+        {
+            return ProductWriteResult.Conflict;
         }
 
         productFromDb.Name = productDto.Name;
@@ -85,10 +102,10 @@ public class ProductService
 
         await _context.SaveChangesAsync();
 
-        return true;
+        return ProductWriteResult.Success;
     }
 
-    public async Task<ProductDetailDto?> PatchAsync(
+    public async Task<(ProductWriteResult Result, ProductDetailDto? Product)> PatchAsync(
         int id,
         PatchProductDto productDto)
     {
@@ -97,7 +114,7 @@ public class ProductService
 
         if (productFromDb is null)
         {
-            return null;
+            return (ProductWriteResult.NotFound, null);
         }
 
         if (!string.IsNullOrWhiteSpace(productDto.Name))
@@ -107,6 +124,16 @@ public class ProductService
 
         if (!string.IsNullOrWhiteSpace(productDto.ProductNumber))
         {
+            var productNumberExists = await _context.Products
+                .AnyAsync(product =>
+                    product.ProductId != id &&
+                    product.ProductNumber == productDto.ProductNumber);
+
+            if (productNumberExists)
+            {
+                return (ProductWriteResult.Conflict, null);
+            }
+
             productFromDb.ProductNumber = productDto.ProductNumber;
         }
 
@@ -139,22 +166,22 @@ public class ProductService
 
         await _context.SaveChangesAsync();
 
-        return productFromDb.Adapt<ProductDetailDto>();
+        return (ProductWriteResult.Success, productFromDb.Adapt<ProductDetailDto>());
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<ProductWriteResult> DeleteAsync(int id)
     {
         var productFromDb = await _context.Products
             .FirstOrDefaultAsync(existingProduct => existingProduct.ProductId == id);
 
         if (productFromDb is null)
         {
-            return false;
+            return ProductWriteResult.NotFound;
         }
 
         _context.Products.Remove(productFromDb);
         await _context.SaveChangesAsync();
 
-        return true;
+        return ProductWriteResult.Success;
     }
 }

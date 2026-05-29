@@ -15,7 +15,7 @@ builder.Services.AddDbContext<AdventureWorksContext>(options =>
 //     config.AddProfile<ProductProfile>();
 // });
 
-builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddControllers();
 
 var app = builder.Build();

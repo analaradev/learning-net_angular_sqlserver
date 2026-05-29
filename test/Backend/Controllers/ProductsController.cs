@@ -8,9 +8,9 @@ namespace Backend.Controllers;
 [Route("api/productos")]
 public class ProductsController : ControllerBase
 {
-    private readonly ProductService _productService;
+    private readonly IProductService _productService;
 
-    public ProductsController(ProductService productService)
+    public ProductsController(IProductService productService)
     {
         _productService = productService;
     }
@@ -48,31 +48,60 @@ public class ProductsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateProductDto productDto)
     {
-        var createdProduct = await _productService.CreateAsync(productDto);
-        return Ok(createdProduct);
+        var (result, createdProduct) = await _productService.CreateAsync(productDto);
+
+        if (result == ProductWriteResult.Conflict)
+        {
+            return Conflict($"Ya existe un producto con el numero '{productDto.ProductNumber}'.");
+        }
+
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = createdProduct!.ProductId },
+            createdProduct);
     }
 
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateProductDto productDto)
     {
-        var updated = await _productService.UpdateAsync(id, productDto);
+        if (id <= 0)
+        {
+            return BadRequest("El id debe ser mayor que cero.");
+        }
 
-        if (!updated)
+        var result = await _productService.UpdateAsync(id, productDto);
+
+        if (result == ProductWriteResult.NotFound)
         {
             return NotFound();
         }
 
-        return Ok();
+        if (result == ProductWriteResult.Conflict)
+        {
+            return Conflict($"Ya existe un producto con el numero '{productDto.ProductNumber}'.");
+        }
+
+        return NoContent();
     }
 
     [HttpPatch("{id:int}")]
     public async Task<IActionResult> Patch(int id, [FromBody] PatchProductDto productDto)
     {
-        var updatedProduct = await _productService.PatchAsync(id, productDto);
+        if (id <= 0)
+        {
+            return BadRequest("El id debe ser mayor que cero.");
+        }
 
-        if (updatedProduct is null)
+        var (result, updatedProduct) = await _productService.PatchAsync(id, productDto);
+
+        if (result == ProductWriteResult.NotFound)
         {
             return NotFound();
+        }
+
+        if (result == ProductWriteResult.Conflict)
+        {
+            return Conflict($"Ya existe un producto con el numero '{productDto.ProductNumber}'.");
         }
 
         return Ok(updatedProduct);
@@ -81,13 +110,18 @@ public class ProductsController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await _productService.DeleteAsync(id);
+        if (id <= 0)
+        {
+            return BadRequest("El id debe ser mayor que cero.");
+        }
 
-        if (!deleted)
+        var result = await _productService.DeleteAsync(id);
+
+        if (result == ProductWriteResult.NotFound)
         {
             return NotFound();
         }
 
-        return Ok();
+        return NoContent();
     }
 }
