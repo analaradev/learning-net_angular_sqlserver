@@ -1,4 +1,5 @@
 using Backend.Data;
+using Backend.Middleware;
 using Backend.Repositories;
 using Backend.Services;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,8 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddControllers();
 
 var app = builder.Build();
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.MapControllers();
 
