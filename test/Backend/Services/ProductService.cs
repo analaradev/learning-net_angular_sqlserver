@@ -73,10 +73,13 @@ public class ProductService : IProductService
         productFromDb.Name = productDto.Name;
         productFromDb.ProductNumber = productDto.ProductNumber;
         productFromDb.Color = productDto.Color;
+        productFromDb.SafetyStockLevel = productDto.SafetyStockLevel;
+        productFromDb.ReorderPoint = productDto.ReorderPoint;
         productFromDb.StandardCost = productDto.StandardCost;
         productFromDb.ListPrice = productDto.ListPrice;
         productFromDb.Size = productDto.Size;
         productFromDb.Weight = productDto.Weight;
+        productFromDb.DaysToManufacture = productDto.DaysToManufacture;
         productFromDb.ModifiedDate = DateTime.UtcNow;
 
         await _productRepository.SaveChangesAsync();
@@ -119,6 +122,16 @@ public class ProductService : IProductService
             productFromDb.Color = productDto.Color;
         }
 
+        if (productDto.SafetyStockLevel.HasValue)
+        {
+            productFromDb.SafetyStockLevel = productDto.SafetyStockLevel.Value;
+        }
+
+        if (productDto.ReorderPoint.HasValue)
+        {
+            productFromDb.ReorderPoint = productDto.ReorderPoint.Value;
+        }
+
         if (productDto.StandardCost.HasValue)
         {
             productFromDb.StandardCost = productDto.StandardCost.Value;
@@ -137,6 +150,11 @@ public class ProductService : IProductService
         if (productDto.Weight.HasValue)
         {
             productFromDb.Weight = productDto.Weight.Value;
+        }
+
+        if (productDto.DaysToManufacture.HasValue)
+        {
+            productFromDb.DaysToManufacture = productDto.DaysToManufacture.Value;
         }
 
         productFromDb.ModifiedDate = DateTime.UtcNow;

@@ -15,6 +15,12 @@ public class UpdateProductDto
     [MaxLength(15)]
     public string? Color { get; set; }
 
+    [Range(0, short.MaxValue)]
+    public short SafetyStockLevel { get; set; }
+
+    [Range(0, short.MaxValue)]
+    public short ReorderPoint { get; set; }
+
     [Range(0, 999999.99)]
     public decimal StandardCost { get; set; }
 
@@ -26,4 +32,7 @@ public class UpdateProductDto
 
     [Range(0, 999999.99)]
     public decimal? Weight { get; set; }
+
+    [Range(0, 365)]
+    public int DaysToManufacture { get; set; }
 }

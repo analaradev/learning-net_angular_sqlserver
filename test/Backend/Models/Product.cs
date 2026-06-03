@@ -22,6 +22,12 @@ public class Product
     [MaxLength(15)]
     public string? Color { get; set; }
 
+    [Column("SafetyStockLevel")]
+    public short SafetyStockLevel { get; set; }
+
+    [Column("ReorderPoint")]
+    public short ReorderPoint { get; set; }
+
     [Column("StandardCost", TypeName = "money")]
     public decimal StandardCost { get; set; }
 
@@ -34,6 +40,9 @@ public class Product
 
     [Column("Weight", TypeName = "decimal(8, 2)")]
     public decimal? Weight { get; set; }
+
+    [Column("DaysToManufacture")]
+    public int DaysToManufacture { get; set; }
 
     [Column("SellStartDate")]
     public DateTime SellStartDate { get; set; }
