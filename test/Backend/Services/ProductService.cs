@@ -34,6 +34,43 @@ public class ProductService : IProductService
         return products.Adapt<List<ProductDto>>();
     }
 
+    public async Task<List<ProductNoteDto>?> GetNotesByProductIdAsync(int productId)
+    {
+        var product = await _productRepository.GetByIdAsync(productId);
+
+        if (product is null)
+        {
+            return null;
+        }
+
+        var productNotes = await _productRepository.GetNotesByProductIdAsync(productId);
+        return productNotes.Adapt<List<ProductNoteDto>>();
+    }
+
+    public async Task<(ProductWriteResult Result, ProductNoteDto? ProductNote)> CreateNoteAsync(
+        int productId,
+        CreateProductNoteDto productNoteDto)
+    {
+        var product = await _productRepository.GetByIdAsync(productId);
+
+        if (product is null)
+        {
+            return (ProductWriteResult.NotFound, null);
+        }
+
+        var productNote = new ProductNote
+        {
+            ProductId = productId,
+            Note = productNoteDto.Note,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _productRepository.AddNoteAsync(productNote);
+        await _productRepository.SaveChangesAsync();
+
+        return (ProductWriteResult.Success, productNote.Adapt<ProductNoteDto>());
+    }
+
     public async Task<(ProductWriteResult Result, ProductDetailDto? Product)> CreateAsync(CreateProductDto productDto)
     {
         var productNumberExists = await _productRepository.ProductNumberExistsAsync(productDto.ProductNumber);
@@ -177,5 +214,29 @@ public class ProductService : IProductService
         await _productRepository.SaveChangesAsync();
 
         return ProductWriteResult.Success;
+    }
+
+    public async Task<ProductWithNotesDto?> GetByIdWithNotesAsync(int id)
+{
+    var product = await _productRepository.GetByIdWithNotesAsync(id);
+
+    if (product is null)
+    {
+        return null;
+    }
+
+    return new ProductWithNotesDto
+    {
+        ProductId = product.ProductId,
+        Name = product.Name,
+        ProductNumber = product.ProductNumber,
+        Notes = product.ProductNotes.Select(note => new ProductNoteDto
+        {
+            ProductNoteId = note.ProductNoteId,
+            ProductId = note.ProductId,
+            Note = note.Note,
+            CreatedAt = note.CreatedAt
+        }).ToList()
+    };
     }
 }

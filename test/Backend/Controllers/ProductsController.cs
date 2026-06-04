@@ -45,6 +45,40 @@ public class ProductsController : ControllerBase
         return Ok(products);
     }
 
+    [HttpGet("{id:int}/notas")]
+    public async Task<IActionResult> GetNotes(int id)
+    {
+        var productNotes = await _productService.GetNotesByProductIdAsync(id);
+
+        if (productNotes is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(productNotes);
+    }
+
+    [HttpPost("{id:int}/notas")]
+    public async Task<IActionResult> CreateNote(int id, [FromBody] CreateProductNoteDto productNoteDto)
+    {
+        if (id <= 0)
+        {
+            return BadRequest("El id debe ser mayor que cero.");
+        }
+
+        var (result, productNote) = await _productService.CreateNoteAsync(id, productNoteDto);
+
+        if (result == ProductWriteResult.NotFound)
+        {
+            return NotFound();
+        }
+
+        return CreatedAtAction(
+            nameof(GetNotes),
+            new { id },
+            productNote);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateProductDto productDto)
     {
@@ -123,5 +157,18 @@ public class ProductsController : ControllerBase
         }
 
         return NoContent();
+    }
+
+    [HttpGet("{id:int}/con-notas")]
+    public async Task<IActionResult> GetByIdWithNotes(int id)
+    {
+        var product = await _productService.GetByIdWithNotesAsync(id);
+
+        if (product is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(product);
     }
 }

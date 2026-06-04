@@ -55,4 +55,9 @@ public class Product
 
     [Column("ModifiedDate")]
     public DateTime ModifiedDate { get; set; }
+
+    [Column("ProductSubcategoryID")]
+    public int? ProductSubcategoryId { get; set; }
+
+    public List<ProductNote> ProductNotes { get; set; } = [];
 }

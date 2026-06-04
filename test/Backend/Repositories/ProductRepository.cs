@@ -45,6 +45,15 @@ public class ProductRepository : IProductRepository
             .ToListAsync();
     }
 
+    public async Task<List<ProductNote>> GetNotesByProductIdAsync(int productId)
+    {
+        return await _context.ProductNotes
+            .AsNoTracking()
+            .Where(productNote => productNote.ProductId == productId)
+            .OrderByDescending(productNote => productNote.CreatedAt)
+            .ToListAsync();
+    }
+
     public async Task<bool> ProductNumberExistsAsync(string productNumber, int? excludedProductId = null)
     {
         return await _context.Products
@@ -58,6 +67,11 @@ public class ProductRepository : IProductRepository
         await _context.Products.AddAsync(product);
     }
 
+    public async Task AddNoteAsync(ProductNote productNote)
+    {
+        await _context.ProductNotes.AddAsync(productNote);
+    }
+
     public void Delete(Product product)
     {
         _context.Products.Remove(product);
@@ -67,4 +81,12 @@ public class ProductRepository : IProductRepository
     {
         await _context.SaveChangesAsync();
     }
+
+    public async Task<Product?> GetByIdWithNotesAsync(int id)
+{
+    return await _context.Products
+        .AsNoTracking()
+        .Include(product => product.ProductNotes)
+        .FirstOrDefaultAsync(product => product.ProductId == id);
+}
 }
