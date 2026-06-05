@@ -1,4 +1,5 @@
 using Backend.Data;
+using Backend.Dtos;
 using Backend.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -45,6 +46,68 @@ public class ProductRepository : IProductRepository
             .ToListAsync();
     }
 
+    public async Task<List<ProductAdvancedSearchDto>> AdvancedSearchAsync(
+        string? name,
+        string? color,
+        decimal? minPrice,
+        decimal? maxPrice)
+    {
+        var query = _context.Products
+            .AsNoTracking()
+            .Include(product => product.ProductNotes)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            query = query.Where(product => product.Name.Contains(name));
+        }
+
+        if (!string.IsNullOrWhiteSpace(color))
+        {
+            query = query.Where(product => product.Color == color);
+        }
+
+        if (minPrice.HasValue)
+        {
+            query = query.Where(product => product.ListPrice >= minPrice.Value);
+        }
+
+        if (maxPrice.HasValue)
+        {
+            query = query.Where(product => product.ListPrice <= maxPrice.Value);
+        }
+
+        return await query
+            .OrderByDescending(product => product.ListPrice)
+            .Take(20)
+            .Select(product => new ProductAdvancedSearchDto
+            {
+                ProductId = product.ProductId,
+                Name = product.Name,
+                ProductNumber = product.ProductNumber,
+                Color = product.Color,
+                ListPrice = product.ListPrice,
+                NotesCount = product.ProductNotes.Count
+            })
+            .ToListAsync();
+    }
+
+    public async Task<List<ProductColorGroupDto>> GetProductsGroupedByColorAsync()
+    {
+        return await _context.Products
+            .AsNoTracking()
+            .Where(product => product.Color != null)
+            .GroupBy(product => product.Color!)
+            .Select(group => new ProductColorGroupDto
+            {
+                Color = group.Key,
+                ProductCount = group.Count(),
+                AveragePrice = group.Average(product => product.ListPrice)
+            })
+            .OrderByDescending(group => group.ProductCount)
+            .ToListAsync();
+    }
+
     public async Task<List<ProductNote>> GetNotesByProductIdAsync(int productId)
     {
         return await _context.ProductNotes
@@ -52,6 +115,53 @@ public class ProductRepository : IProductRepository
             .Where(productNote => productNote.ProductId == productId)
             .OrderByDescending(productNote => productNote.CreatedAt)
             .ToListAsync();
+    }
+
+    public async Task<bool> ProductHasNotesAsync(int productId)
+    {
+        return await _context.ProductNotes
+            .AsNoTracking()
+            .AnyAsync(productNote => productNote.ProductId == productId);
+    }
+
+    public async Task<bool> AllNotesHaveTextAsync()
+    {
+        return await _context.ProductNotes
+            .AsNoTracking()
+            .AllAsync(productNote => productNote.Note != "");
+    }
+
+    public async Task<Product?> GetByProductNumberAsync(string productNumber)
+    {
+        return await _context.Products
+            .AsNoTracking()
+            .SingleOrDefaultAsync(product => product.ProductNumber == productNumber);
+    }
+
+    public async Task<TrackingComparisonDto> GetTrackingComparisonAsync()
+    {
+        _context.ChangeTracker.Clear();
+
+        await _context.Products
+            .Take(5)
+            .ToListAsync();
+
+        var trackedEntitiesAfterNormalQuery = _context.ChangeTracker.Entries().Count();
+
+        _context.ChangeTracker.Clear();
+
+        await _context.Products
+            .AsNoTracking()
+            .Take(5)
+            .ToListAsync();
+
+        var trackedEntitiesAfterNoTrackingQuery = _context.ChangeTracker.Entries().Count();
+
+        return new TrackingComparisonDto
+        {
+            TrackedEntitiesAfterNormalQuery = trackedEntitiesAfterNormalQuery,
+            TrackedEntitiesAfterNoTrackingQuery = trackedEntitiesAfterNoTrackingQuery
+        };
     }
 
     public async Task<bool> ProductNumberExistsAsync(string productNumber, int? excludedProductId = null)
@@ -83,10 +193,10 @@ public class ProductRepository : IProductRepository
     }
 
     public async Task<Product?> GetByIdWithNotesAsync(int id)
-{
-    return await _context.Products
-        .AsNoTracking()
-        .Include(product => product.ProductNotes)
-        .FirstOrDefaultAsync(product => product.ProductId == id);
-}
+    {
+        return await _context.Products
+            .AsNoTracking()
+            .Include(product => product.ProductNotes)
+            .FirstOrDefaultAsync(product => product.ProductId == id);
+    }
 }

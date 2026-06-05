@@ -34,6 +34,24 @@ public class ProductService : IProductService
         return products.Adapt<List<ProductDto>>();
     }
 
+    public async Task<List<ProductAdvancedSearchDto>> AdvancedSearchAsync(
+        string? name,
+        string? color,
+        decimal? minPrice,
+        decimal? maxPrice)
+    {
+        return await _productRepository.AdvancedSearchAsync(
+            name,
+            color,
+            minPrice,
+            maxPrice);
+    }
+
+    public async Task<List<ProductColorGroupDto>> GetProductsGroupedByColorAsync()
+    {
+        return await _productRepository.GetProductsGroupedByColorAsync();
+    }
+
     public async Task<List<ProductNoteDto>?> GetNotesByProductIdAsync(int productId)
     {
         var product = await _productRepository.GetByIdAsync(productId);
@@ -45,6 +63,38 @@ public class ProductService : IProductService
 
         var productNotes = await _productRepository.GetNotesByProductIdAsync(productId);
         return productNotes.Adapt<List<ProductNoteDto>>();
+    }
+
+    public async Task<ProductHasNotesDto> ProductHasNotesAsync(int productId)
+    {
+        var hasNotes = await _productRepository.ProductHasNotesAsync(productId);
+
+        return new ProductHasNotesDto
+        {
+            ProductId = productId,
+            HasNotes = hasNotes
+        };
+    }
+
+    public async Task<NotesValidationDto> AllNotesHaveTextAsync()
+    {
+        var allNotesHaveText = await _productRepository.AllNotesHaveTextAsync();
+
+        return new NotesValidationDto
+        {
+            AllNotesHaveText = allNotesHaveText
+        };
+    }
+
+    public async Task<ProductDto?> GetByProductNumberAsync(string productNumber)
+    {
+        var product = await _productRepository.GetByProductNumberAsync(productNumber);
+        return product.Adapt<ProductDto?>();
+    }
+
+    public async Task<TrackingComparisonDto> GetTrackingComparisonAsync()
+    {
+        return await _productRepository.GetTrackingComparisonAsync();
     }
 
     public async Task<(ProductWriteResult Result, ProductNoteDto? ProductNote)> CreateNoteAsync(
@@ -217,26 +267,26 @@ public class ProductService : IProductService
     }
 
     public async Task<ProductWithNotesDto?> GetByIdWithNotesAsync(int id)
-{
-    var product = await _productRepository.GetByIdWithNotesAsync(id);
-
-    if (product is null)
     {
-        return null;
-    }
+        var product = await _productRepository.GetByIdWithNotesAsync(id);
 
-    return new ProductWithNotesDto
-    {
-        ProductId = product.ProductId,
-        Name = product.Name,
-        ProductNumber = product.ProductNumber,
-        Notes = product.ProductNotes.Select(note => new ProductNoteDto
+        if (product is null)
         {
-            ProductNoteId = note.ProductNoteId,
-            ProductId = note.ProductId,
-            Note = note.Note,
-            CreatedAt = note.CreatedAt
-        }).ToList()
-    };
+            return null;
+        }
+
+        return new ProductWithNotesDto
+        {
+            ProductId = product.ProductId,
+            Name = product.Name,
+            ProductNumber = product.ProductNumber,
+            Notes = product.ProductNotes.Select(note => new ProductNoteDto
+            {
+                ProductNoteId = note.ProductNoteId,
+                ProductId = note.ProductId,
+                Note = note.Note,
+                CreatedAt = note.CreatedAt
+            }).ToList()
+        };
     }
 }

@@ -45,6 +45,63 @@ public class ProductsController : ControllerBase
         return Ok(products);
     }
 
+    [HttpGet("busqueda-avanzada")]
+    public async Task<IActionResult> AdvancedSearch(
+        [FromQuery] string? name,
+        [FromQuery] string? color,
+        [FromQuery] decimal? minPrice,
+        [FromQuery] decimal? maxPrice)
+    {
+        var products = await _productService.AdvancedSearchAsync(
+            name,
+            color,
+            minPrice,
+            maxPrice);
+
+        return Ok(products);
+    }
+
+    [HttpGet("agrupados-por-color")]
+    public async Task<IActionResult> GetProductsGroupedByColor()
+    {
+        var products = await _productService.GetProductsGroupedByColorAsync();
+        return Ok(products);
+    }
+
+    [HttpGet("{id:int}/tiene-notas")]
+    public async Task<IActionResult> ProductHasNotes(int id)
+    {
+        var result = await _productService.ProductHasNotesAsync(id);
+        return Ok(result);
+    }
+
+    [HttpGet("notas-validas")]
+    public async Task<IActionResult> AllNotesHaveText()
+    {
+        var result = await _productService.AllNotesHaveTextAsync();
+        return Ok(result);
+    }
+
+    [HttpGet("por-numero/{productNumber}")]
+    public async Task<IActionResult> GetByProductNumber(string productNumber)
+    {
+        var product = await _productService.GetByProductNumberAsync(productNumber);
+
+        if (product is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(product);
+    }
+
+    [HttpGet("tracking-comparacion")]
+    public async Task<IActionResult> GetTrackingComparison()
+    {
+        var result = await _productService.GetTrackingComparisonAsync();
+        return Ok(result);
+    }
+
     [HttpGet("{id:int}/notas")]
     public async Task<IActionResult> GetNotes(int id)
     {
