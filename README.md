@@ -15,15 +15,17 @@
 
 ## Contexto
 
-Repositorio orientado a practicar una aplicacion web completa con frontend, backend y base de datos relacional.
+Este repositorio reune practica tecnica, documentacion y avances de un sistema web para administracion y control de activos. Forma parte de mi aprendizaje profesional en desarrollo web moderno, integracion frontend/backend y trabajo con bases de datos relacionales.
 
-## Proposito
+## Objetivo
 
-- Practicar estructura full stack.
-- Crear endpoints, controladores y servicios.
-- Separar responsabilidades entre frontend, backend y base de datos.
-- Conectar la aplicacion con SQL Server.
-- Documentar avances de aprendizaje tecnico.
+Construir una aplicacion web que permita registrar, consultar y administrar informacion de activos, practicando un flujo completo de desarrollo:
+
+- Interfaz web con Angular.
+- Backend con .NET / .NET Core y C#.
+- Persistencia de datos con SQL Server.
+- Organizacion del codigo por controladores, servicios y repositorios.
+- Documentacion tecnica del proceso de aprendizaje.
 
 ## Tecnologias
 
@@ -33,6 +35,19 @@ Repositorio orientado a practicar una aplicacion web completa con frontend, back
 ![TypeScript](https://img.shields.io/badge/TypeScript-0ea5e9?style=flat-square&logo=typescript&logoColor=white)
 ![SQL Server](https://img.shields.io/badge/SQL%20Server-2563eb?style=flat-square)
 
+## Lo Que Practico En Este Proyecto
+
+- Estructura de una aplicacion full stack.
+- Creacion de endpoints y controladores.
+- Separacion de responsabilidades entre backend, servicios y repositorios.
+- Conexion con base de datos.
+- Consultas y administracion de informacion.
+- Documentacion tecnica para reforzar el aprendizaje.
+
 ## Estado
 
-Proyecto de aprendizaje conservado como evidencia tecnica de stack full stack.
+Proyecto en desarrollo y aprendizaje activo. Algunas partes pueden cambiar conforme se agreguen modulos, practicas y mejoras.
+
+## Nota
+
+Este repositorio esta pensado como evidencia de aprendizaje en Angular, .NET y SQL Server. Para una version de portafolio, conviene acompanarlo con capturas, una descripcion del flujo principal y una explicacion breve de la arquitectura.

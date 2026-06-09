@@ -26,4 +26,8 @@ public interface IProductRepository
     void Delete(Product product);
     Task SaveChangesAsync();
     Task<Product?> GetByIdWithNotesAsync(int id);
+    Task<List<Product>> GetProductsByMinPriceWithRawSqlAsync(decimal minPrice);
+    Task<Product> CreateProductWithNoteInTransactionAsync(Product product, ProductNote productNote);
+
+    Task<List<Product>> GetAllAsync(CancellationToken cancellationToken);
 }

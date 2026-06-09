@@ -26,4 +26,9 @@ public interface IProductService
     Task<(ProductWriteResult Result, ProductDetailDto? Product)> PatchAsync(int id, PatchProductDto productDto);
     Task<ProductWriteResult> DeleteAsync(int id);
     Task<ProductWithNotesDto?> GetByIdWithNotesAsync(int id);
+    Task<List<ProductDto>> GetProductsByMinPriceWithRawSqlAsync(decimal minPrice);
+    Task<(ProductWriteResult Result, ProductDetailDto? Product)> CreateProductWithNoteInTransactionAsync(
+        CreateProductWithNoteDto productDto);
+
+    Task<List<ProductDto>> GetAllAsync(CancellationToken cancellationToken);
 }

@@ -289,4 +289,42 @@ public class ProductService : IProductService
             }).ToList()
         };
     }
+    public async Task<List<ProductDto>> GetProductsByMinPriceWithRawSqlAsync(decimal minPrice)
+    {
+        var products = await _productRepository.GetProductsByMinPriceWithRawSqlAsync(minPrice);
+        return products.Adapt<List<ProductDto>>();
+    }
+    public async Task<(ProductWriteResult Result, ProductDetailDto? Product)> CreateProductWithNoteInTransactionAsync(
+    CreateProductWithNoteDto productDto)
+    {
+        var productNumberExists = await _productRepository.ProductNumberExistsAsync(
+            productDto.Product.ProductNumber);
+
+        if (productNumberExists)
+        {
+            return (ProductWriteResult.Conflict, null);
+        }
+
+        var product = productDto.Product.Adapt<Product>();
+        product.SellStartDate = DateTime.UtcNow;
+        product.ModifiedDate = DateTime.UtcNow;
+
+        var productNote = new ProductNote
+        {
+            Note = productDto.Note,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var createdProduct = await _productRepository.CreateProductWithNoteInTransactionAsync(
+            product,
+            productNote);
+
+        return (ProductWriteResult.Success, createdProduct.Adapt<ProductDetailDto>());
+    }
+
+    public async Task<List<ProductDto>> GetAllAsync(CancellationToken cancellationToken)
+    {
+        var products = await _productRepository.GetAllAsync(cancellationToken);
+        return products.Adapt<List<ProductDto>>();
+    }
 }

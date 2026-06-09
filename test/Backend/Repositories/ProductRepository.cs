@@ -199,4 +199,52 @@ public class ProductRepository : IProductRepository
             .Include(product => product.ProductNotes)
             .FirstOrDefaultAsync(product => product.ProductId == id);
     }
+
+    public async Task<List<Product>> GetProductsByMinPriceWithRawSqlAsync(decimal minPrice)
+    {
+        return await _context.Products
+            .FromSqlInterpolated($@"
+                SELECT TOP (10) *
+                FROM Production.Product
+                WHERE ListPrice >= {minPrice}
+                ORDER BY ListPrice DESC")
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    public async Task<Product> CreateProductWithNoteInTransactionAsync(
+    Product product,
+    ProductNote productNote)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
+            await _context.Products.AddAsync(product);
+            await _context.SaveChangesAsync();
+
+            productNote.ProductId = product.ProductId;
+
+            await _context.ProductNotes.AddAsync(productNote);
+            await _context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
+
+            return product;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    public async Task<List<Product>> GetAllAsync(CancellationToken cancellationToken)
+    {
+        return await _context.Products
+            .AsNoTracking()
+            .OrderBy(product => product.Name)
+            .Take(10)
+            .ToListAsync(cancellationToken);
+    }
 }

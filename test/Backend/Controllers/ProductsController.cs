@@ -16,10 +16,10 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
+        await Task.Delay(10000, cancellationToken);
         var products = await _productService.GetAllAsync();
-        // Ok devuelve un 200 con el resultado.
 
         return Ok(products);
     }
@@ -228,4 +228,69 @@ public class ProductsController : ControllerBase
 
         return Ok(product);
     }
+
+    [HttpGet("raw-sql/precio-minimo")]
+    public async Task<IActionResult> GetProductsByMinPriceWithRawSql([FromQuery] decimal minPrice)
+    {
+        var products = await _productService.GetProductsByMinPriceWithRawSqlAsync(minPrice);
+        return Ok(products);
+    }
+
+    [HttpPost("transaccion/con-nota")]
+    public async Task<IActionResult> CreateProductWithNoteInTransaction(
+        [FromBody] CreateProductWithNoteDto productDto)
+    {
+        var (result, product) = await _productService.CreateProductWithNoteInTransactionAsync(productDto);
+
+        if (result == ProductWriteResult.Conflict)
+        {
+            return Conflict($"Ya existe un producto con el numero '{productDto.Product.ProductNumber}'.");
+        }
+
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = product!.ProductId },
+            product);
+    }
+
+    [HttpGet("prueba-cancelacion/con-token")]
+    public async Task<IActionResult> TestCancellationToken(CancellationToken cancellationToken)
+    {
+        Console.WriteLine("con token: inicio la peticion");
+
+        try
+        {
+            await Task.Delay(10000, cancellationToken);
+
+            Console.WriteLine("con token: termino el delay y va a consultar productos");
+
+            var products = await _productService.GetAllAsync(cancellationToken);
+
+            Console.WriteLine("con token: termino la consulta de productos");
+
+            return Ok(products);
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine("con token: la peticion fue cancelada");
+            return new EmptyResult();
+        }
+    }
+
+    [HttpGet("prueba-cancelacion/sin-token")]
+    public async Task<IActionResult> TestWithoutCancellationToken()
+    {
+        Console.WriteLine("sin token: inicio la peticion");
+
+        await Task.Delay(10000);
+
+        Console.WriteLine("sin token: termino el delay aunque el cliente haya cancelado y va a consultar productos");
+
+        var products = await _productService.GetAllAsync(CancellationToken.None);
+
+        Console.WriteLine("sin token: termino la consulta de productos aunque el cliente haya cancelado");
+
+        return Ok(products);
+    }
+
 }
