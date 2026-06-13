@@ -21,14 +21,17 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public IActionResult Login([FromBody] LoginDto loginDto)
     {
-        if (loginDto.UserName != "ana" || loginDto.Password != "1234")
+        if ((loginDto.UserName != "ana" && loginDto.UserName != "juan") || loginDto.Password != "1234")
         {
             return Unauthorized();
         }
 
+        var role = loginDto.UserName == "ana" ? "Admin" : "User";
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.Name, loginDto.UserName),
+            new(ClaimTypes.Role, role),
             new("CanDeleteProducts", loginDto.UserName == "ana" ? "true" : "false")
         };
 
