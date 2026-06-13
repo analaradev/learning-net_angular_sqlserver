@@ -1,5 +1,6 @@
 using Backend.Dtos;
 using Backend.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
@@ -199,6 +200,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = "DeletePermission")]
     public async Task<IActionResult> Delete(int id)
     {
         if (id <= 0)

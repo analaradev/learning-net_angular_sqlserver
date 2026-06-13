@@ -3,6 +3,7 @@ using Backend.Middleware;
 using Backend.Repositories;
 using Backend.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -20,11 +21,6 @@ builder.Services.AddDbContext<AdventureWorksContext>(options =>
         adventureWorksConnectionString,
         sqlOptions => sqlOptions.CommandTimeout(3)));
 
-// AutoMapper:
-// builder.Services.AddAutoMapper(config =>
-// {
-//     config.AddProfile<ProductProfile>();
-// });
 
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
@@ -43,7 +39,21 @@ builder.Services.AddCors(options =>
     });
 });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "JWT Authorization header using the Bearer scheme."
+    });
+
+    c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
+    });
+});
 builder.Services.AddControllers();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -62,7 +72,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("DeletePermission", policy => 
+        policy.RequireClaim("CanDeleteProducts", "true"));
+});
 
 var app = builder.Build();
 

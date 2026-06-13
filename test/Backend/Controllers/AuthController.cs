@@ -28,7 +28,8 @@ public class AuthController : ControllerBase
 
         var claims = new List<Claim>
         {
-            new(ClaimTypes.Name, loginDto.UserName)
+            new(ClaimTypes.Name, loginDto.UserName),
+            new("CanDeleteProducts", loginDto.UserName == "ana" ? "true" : "false")
         };
 
         var key = new SymmetricSecurityKey(
