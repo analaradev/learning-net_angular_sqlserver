@@ -1,7 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\CleanArchDemo.Domain\CleanArchDemo.Domain.csproj" />
+    <ProjectReference Include="..\Backend.Clean.Domain\Backend.Clean.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mapster" Version="10.0.8" />
   </ItemGroup>
 
   <PropertyGroup>

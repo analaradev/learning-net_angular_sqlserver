@@ -1,6 +1,0 @@
-<Solution>
-  <Project Path="CleanArchDemo.Application/CleanArchDemo.Application.csproj" />
-  <Project Path="CleanArchDemo.Console/CleanArchDemo.Console.csproj" />
-  <Project Path="CleanArchDemo.Domain/CleanArchDemo.Domain.csproj" />
-  <Project Path="CleanArchDemo.Infrastructure/CleanArchDemo.Infrastructure.csproj" />
-</Solution>
