@@ -1,0 +1,351 @@
+using Backend.Clean.Application.DTOs;
+using Backend.Clean.Application.Interfaces;
+using Backend.Clean.Domain.Entities;
+using Backend.Clean.Domain.Enums;
+using Backend.Clean.Domain.Interfaces;
+using Mapster;
+
+namespace Backend.Clean.Application.Services;
+
+public class ProductService : IProductService
+{
+    private readonly IProductRepository _productRepository;
+
+    public ProductService(IProductRepository productRepository)
+    {
+        _productRepository = productRepository;
+    }
+
+    // task es para que sea asíncrono el método
+    public async Task<List<ProductDto>> GetAllAsync()
+    {
+        var products = await _productRepository.GetAllAsync();
+        return products.Adapt<List<ProductDto>>();
+    }
+
+    public async Task<ProductDetailDto?> GetByIdAsync(int id)
+    {
+        var product = await _productRepository.GetByIdAsync(id);
+        return product.Adapt<ProductDetailDto?>();
+    }
+
+    // task es para que sea asíncrono
+    public async Task<List<ProductDto>> SearchByNameAsync(string name)
+    {
+        var products = await _productRepository.SearchByNameAsync(name);
+        return products.Adapt<List<ProductDto>>();
+    }
+
+    public async Task<List<ProductAdvancedSearchDto>> AdvancedSearchAsync(
+        string? name,
+        string? color,
+        decimal? minPrice,
+        decimal? maxPrice)
+    {
+        var products = await _productRepository.AdvancedSearchAsync(name, color, minPrice, maxPrice);
+        return products.Select(product => new ProductAdvancedSearchDto
+        {
+            ProductId = product.ProductId,
+            Name = product.Name,
+            ProductNumber = product.ProductNumber,
+            Color = product.Color,
+            ListPrice = product.ListPrice,
+            NotesCount = product.ProductNotes.Count
+        }).ToList();
+    }
+
+    public async Task<List<ProductColorGroupDto>> GetProductsGroupedByColorAsync()
+    {
+        var groups = await _productRepository.GetProductsGroupedByColorAsync();
+        return groups.Select(g => new ProductColorGroupDto
+        {
+            Color = g.Color,
+            ProductCount = g.ProductCount,
+            AveragePrice = g.AveragePrice
+        }).ToList();
+    }
+
+    public async Task<List<ProductNoteDto>?> GetNotesByProductIdAsync(int productId)
+    {
+        var product = await _productRepository.GetByIdAsync(productId);
+
+        if (product is null)
+        {
+            return null;
+        }
+
+        var productNotes = await _productRepository.GetNotesByProductIdAsync(productId);
+        return productNotes.Adapt<List<ProductNoteDto>>();
+    }
+
+    public async Task<ProductHasNotesDto> ProductHasNotesAsync(int productId)
+    {
+        var hasNotes = await _productRepository.ProductHasNotesAsync(productId);
+
+        return new ProductHasNotesDto
+        {
+            ProductId = productId,
+            HasNotes = hasNotes
+        };
+    }
+
+    public async Task<NotesValidationDto> AllNotesHaveTextAsync()
+    {
+        var allNotesHaveText = await _productRepository.AllNotesHaveTextAsync();
+
+        return new NotesValidationDto
+        {
+            AllNotesHaveText = allNotesHaveText
+        };
+    }
+
+    public async Task<ProductDto?> GetByProductNumberAsync(string productNumber)
+    {
+        var product = await _productRepository.GetByProductNumberAsync(productNumber);
+        return product.Adapt<ProductDto?>();
+    }
+
+    public async Task<TrackingComparisonDto> GetTrackingComparisonAsync()
+    {
+        var (trackedNormal, trackedNoTracking) = await _productRepository.GetTrackingComparisonDataAsync();
+
+        return new TrackingComparisonDto
+        {
+            TrackedEntitiesAfterNormalQuery = trackedNormal,
+            TrackedEntitiesAfterNoTrackingQuery = trackedNoTracking
+        };
+    }
+
+    public async Task<(ProductWriteResult Result, ProductNoteDto? ProductNote)> CreateNoteAsync(
+        int productId,
+        CreateProductNoteDto productNoteDto)
+    {
+        var product = await _productRepository.GetByIdAsync(productId);
+
+        if (product is null)
+        {
+            return (ProductWriteResult.NotFound, null);
+        }
+
+        var productNote = new ProductNote
+        {
+            ProductId = productId,
+            Note = productNoteDto.Note,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _productRepository.AddNoteAsync(productNote);
+        await _productRepository.SaveChangesAsync();
+
+        return (ProductWriteResult.Success, productNote.Adapt<ProductNoteDto>());
+    }
+
+    public async Task<(ProductWriteResult Result, ProductDetailDto? Product)> CreateAsync(CreateProductDto productDto)
+    {
+        var productNumberExists = await _productRepository.ProductNumberExistsAsync(productDto.ProductNumber);
+
+        if (productNumberExists)
+        {
+            return (ProductWriteResult.Conflict, null);
+        }
+
+        var product = productDto.Adapt<Product>();
+        product.SellStartDate = DateTime.UtcNow;
+        product.ModifiedDate = DateTime.UtcNow;
+        await _productRepository.AddAsync(product);
+        await _productRepository.SaveChangesAsync();
+
+        return (ProductWriteResult.Success, product.Adapt<ProductDetailDto>());
+    }
+
+    public async Task<ProductWriteResult> UpdateAsync(int id, UpdateProductDto productDto)
+    {
+        var productFromDb = await _productRepository.GetByIdForUpdateAsync(id);
+
+        if (productFromDb is null)
+        {
+            return ProductWriteResult.NotFound;
+        }
+
+        var productNumberExists = await _productRepository.ProductNumberExistsAsync(
+            productDto.ProductNumber,
+            id);
+
+        if (productNumberExists)
+        {
+            return ProductWriteResult.Conflict;
+        }
+
+        productFromDb.Name = productDto.Name;
+        productFromDb.ProductNumber = productDto.ProductNumber;
+        productFromDb.Color = productDto.Color;
+        productFromDb.SafetyStockLevel = productDto.SafetyStockLevel;
+        productFromDb.ReorderPoint = productDto.ReorderPoint;
+        productFromDb.StandardCost = productDto.StandardCost;
+        productFromDb.ListPrice = productDto.ListPrice;
+        productFromDb.Size = productDto.Size;
+        productFromDb.Weight = productDto.Weight;
+        productFromDb.DaysToManufacture = productDto.DaysToManufacture;
+        productFromDb.ModifiedDate = DateTime.UtcNow;
+
+        await _productRepository.SaveChangesAsync();
+
+        return ProductWriteResult.Success;
+    }
+
+    public async Task<(ProductWriteResult Result, ProductDetailDto? Product)> PatchAsync(
+        int id,
+        PatchProductDto productDto)
+    {
+        var productFromDb = await _productRepository.GetByIdForUpdateAsync(id);
+
+        if (productFromDb is null)
+        {
+            return (ProductWriteResult.NotFound, null);
+        }
+
+        if (!string.IsNullOrWhiteSpace(productDto.Name))
+        {
+            productFromDb.Name = productDto.Name;
+        }
+
+        if (!string.IsNullOrWhiteSpace(productDto.ProductNumber))
+        {
+            var productNumberExists = await _productRepository.ProductNumberExistsAsync(
+                productDto.ProductNumber,
+                id);
+
+            if (productNumberExists)
+            {
+                return (ProductWriteResult.Conflict, null);
+            }
+
+            productFromDb.ProductNumber = productDto.ProductNumber;
+        }
+
+        if (productDto.Color is not null)
+        {
+            productFromDb.Color = productDto.Color;
+        }
+
+        if (productDto.SafetyStockLevel.HasValue)
+        {
+            productFromDb.SafetyStockLevel = productDto.SafetyStockLevel.Value;
+        }
+
+        if (productDto.ReorderPoint.HasValue)
+        {
+            productFromDb.ReorderPoint = productDto.ReorderPoint.Value;
+        }
+
+        if (productDto.StandardCost.HasValue)
+        {
+            productFromDb.StandardCost = productDto.StandardCost.Value;
+        }
+
+        if (productDto.ListPrice.HasValue)
+        {
+            productFromDb.ListPrice = productDto.ListPrice.Value;
+        }
+
+        if (productDto.Size is not null)
+        {
+            productFromDb.Size = productDto.Size;
+        }
+
+        if (productDto.Weight.HasValue)
+        {
+            productFromDb.Weight = productDto.Weight.Value;
+        }
+
+        if (productDto.DaysToManufacture.HasValue)
+        {
+            productFromDb.DaysToManufacture = productDto.DaysToManufacture.Value;
+        }
+
+        productFromDb.ModifiedDate = DateTime.UtcNow;
+
+        await _productRepository.SaveChangesAsync();
+
+        return (ProductWriteResult.Success, productFromDb.Adapt<ProductDetailDto>());
+    }
+
+    public async Task<ProductWriteResult> DeleteAsync(int id)
+    {
+        var productFromDb = await _productRepository.GetByIdForUpdateAsync(id);
+
+        if (productFromDb is null)
+        {
+            return ProductWriteResult.NotFound;
+        }
+
+        _productRepository.Delete(productFromDb);
+        await _productRepository.SaveChangesAsync();
+
+        return ProductWriteResult.Success;
+    }
+
+    public async Task<ProductWithNotesDto?> GetByIdWithNotesAsync(int id)
+    {
+        var product = await _productRepository.GetByIdWithNotesAsync(id);
+
+        if (product is null)
+        {
+            return null;
+        }
+
+        return new ProductWithNotesDto
+        {
+            ProductId = product.ProductId,
+            Name = product.Name,
+            ProductNumber = product.ProductNumber,
+            Notes = product.ProductNotes.Select(note => new ProductNoteDto
+            {
+                ProductNoteId = note.ProductNoteId,
+                ProductId = note.ProductId,
+                Note = note.Note,
+                CreatedAt = note.CreatedAt
+            }).ToList()
+        };
+    }
+
+    public async Task<List<ProductDto>> GetProductsByMinPriceWithRawSqlAsync(decimal minPrice)
+    {
+        var products = await _productRepository.GetProductsByMinPriceWithRawSqlAsync(minPrice);
+        return products.Adapt<List<ProductDto>>();
+    }
+
+    public async Task<(ProductWriteResult Result, ProductDetailDto? Product)> CreateProductWithNoteInTransactionAsync(
+        CreateProductWithNoteDto productDto)
+    {
+        var productNumberExists = await _productRepository.ProductNumberExistsAsync(
+            productDto.Product.ProductNumber);
+
+        if (productNumberExists)
+        {
+            return (ProductWriteResult.Conflict, null);
+        }
+
+        var product = productDto.Product.Adapt<Product>();
+        product.SellStartDate = DateTime.UtcNow;
+        product.ModifiedDate = DateTime.UtcNow;
+
+        var productNote = new ProductNote
+        {
+            Note = productDto.Note,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var createdProduct = await _productRepository.CreateProductWithNoteInTransactionAsync(
+            product,
+            productNote);
+
+        return (ProductWriteResult.Success, createdProduct.Adapt<ProductDetailDto>());
+    }
+
+    public async Task<List<ProductDto>> GetAllAsync(CancellationToken cancellationToken)
+    {
+        var products = await _productRepository.GetAllAsync(cancellationToken);
+        return products.Adapt<List<ProductDto>>();
+    }
+}
